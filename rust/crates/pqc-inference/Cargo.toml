@@ -1,0 +1,18 @@
+[package]
+name = "pqc-inference"
+version = "0.1.0"
+edition = "2021"
+description = "ONNX serving for the quantum-risk model — gradient_boosted adapter only, no Kafka, no transformer adapter (README.md §7.6)"
+
+[dependencies]
+tokio = { workspace = true }
+axum = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+ort = { version = "2.0.0-rc.13", default-features = false, features = ["ndarray", "load-dynamic"] }
+ndarray = "0.17"

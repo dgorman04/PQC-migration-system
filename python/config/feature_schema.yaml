@@ -1,0 +1,62 @@
+# The feature schema — the single source of truth for column order (spec §5,
+# README §9.2). Both `pqc_features` (builds the parquet) and the eventual
+# `rust/crates/pqc-inference` adapter config derive from this file. Bump
+# `schema_version` and retrain whenever the column list or order changes —
+# never reorder silently.
+schema_version: "1.0.0"
+
+# Order here IS the tensor column order the model is trained and served with.
+features:
+  # --- cryptographic ---
+  - name: algorithm_RSA
+    kind: numeric
+  - name: algorithm_ECC
+    kind: numeric
+  - name: key_size
+    kind: numeric
+  - name: quantum_vulnerable
+    kind: numeric
+
+  # --- exposure ---
+  - name: internet_accessible
+    kind: numeric
+  - name: has_public_cert
+    kind: numeric
+  - name: network_zone
+    kind: categorical
+    categories: { public: 0.0, dmz: 1.0, internal: 2.0, isolated: 3.0 }
+
+  # --- business ---
+  - name: financial_data
+    kind: numeric
+  - name: customer_data
+    kind: numeric
+  - name: regulated_system
+    kind: numeric
+  - name: criticality
+    kind: categorical
+    categories: { LOW: 0.0, MEDIUM: 1.0, HIGH: 2.0, CRITICAL: 3.0 }
+
+  # --- complexity ---
+  - name: dependency_count
+    kind: numeric
+  - name: loc_estimate
+    kind: numeric
+  - name: migration_complexity
+    kind: categorical
+    categories: { LOW: 0.0, MEDIUM: 1.0, HIGH: 2.0 }
+
+  # --- historical ---
+  - name: asset_age_days
+    kind: numeric
+  - name: previous_incident_flag
+    kind: numeric
+
+label:
+  name: risk_score
+  range: [0.0, 1.0]
+  description: >
+    Continuous quantum-migration risk score. Training labels come from the
+    rule-based function in pqc_riskmodel.labels (README §7.5); the model
+    itself is an XGBoost regressor trained to approximate it, then judged
+    against a small hand-labelled validation set the rule never sees.

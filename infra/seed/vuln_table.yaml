@@ -1,0 +1,57 @@
+# The quantum-vulnerability classification table (spec §2, README §7.1).
+# Config, not code — the TLS scanner and repo scanner both read this rather
+# than hard-coding the RSA/ECDSA/ML-KEM list. Extend it as new algorithm
+# names turn up in real scans; never edit scanner source to add an algorithm.
+#
+# `quantum_vulnerable: true`  → broken by Shor's algorithm on a CRQC
+# `quantum_vulnerable: false` → NIST-standardised PQC algorithm, or a
+#                                hybrid mode combining one with a classical algorithm
+
+algorithms:
+  # --- classical, quantum-vulnerable ---
+  - name: RSA
+    quantum_vulnerable: true
+    family: public_key
+    note: "broken by Shor's algorithm; key size does not save it"
+  - name: DSA
+    quantum_vulnerable: true
+    family: signature
+  - name: ECDSA
+    quantum_vulnerable: true
+    family: signature
+  - name: EdDSA
+    quantum_vulnerable: true
+    family: signature
+  - name: DH
+    quantum_vulnerable: true
+    family: key_exchange
+  - name: ECDH
+    quantum_vulnerable: true
+    family: key_exchange
+
+  # --- NIST post-quantum standards (FIPS 203/204/205) ---
+  - name: ML-KEM
+    quantum_vulnerable: false
+    family: key_exchange
+    note: "FIPS 203 (formerly CRYSTALS-Kyber)"
+  - name: ML-DSA
+    quantum_vulnerable: false
+    family: signature
+    note: "FIPS 204 (formerly CRYSTALS-Dilithium)"
+  - name: SLH-DSA
+    quantum_vulnerable: false
+    family: signature
+    note: "FIPS 205 (formerly SPHINCS+)"
+
+  # --- hybrid modes: classical + PQC together ---
+  - name: X25519MLKEM768
+    quantum_vulnerable: false
+    family: key_exchange
+    note: "hybrid; safe as long as the PQC component holds"
+
+# Fallback for anything not in the table above. The scanner must still emit a
+# Finding — never silently drop an unrecognised algorithm (coverage matters
+# for the evaluation, §10).
+unknown_algorithm_default:
+  quantum_vulnerable: null   # null = "unknown", not "false" — the dashboard
+                              # should render this distinctly from a real "safe"

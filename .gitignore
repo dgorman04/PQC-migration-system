@@ -1,0 +1,54 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+python/uv.lock.bak
+
+# --- Rust ---
+/rust/target/
+**/*.rs.bk
+
+# --- ML artifacts / data (never commit trained models or raw data) ---
+feature_store/
+mlruns/
+mlartifacts/
+models/
+*.onnx
+*.xgb
+*.pkl
+*.joblib
+*.parquet
+data/rag_sources/*.pdf
+!data/rag_sources/.gitkeep
+
+# onnxruntime.dll gets copied next to pqc-inference for local (load-dynamic)
+# runs — see README §7.6. ~18MB, never commit it; each dev copies their own
+# from python/.venv or downloads a release build.
+rust/crates/pqc-inference/onnxruntime.dll
+rust/crates/*/*.log
+
+# real inventory / scan output must never be committed
+data/expert_validation.csv
+infra/seed/scan_targets.txt.local
+
+# --- Node / dashboard ---
+dashboard/node_modules/
+dashboard/dist/
+
+# --- infra state ---
+infra/.postgres-data/
+infra/.neo4j-data/
+infra/.mlflow-data/
+
+# --- secrets ---
+.env
+.env.*
+!.env.example
+
+# --- editor / OS ---
+.DS_Store
+.idea/
+*.swp

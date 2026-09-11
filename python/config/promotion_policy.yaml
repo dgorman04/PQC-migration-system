@@ -1,0 +1,40 @@
+# Promotion gate policy — same shape as the reference
+# `promotion-controller/crates/promotion-policy/sample/policy.yaml`, read by
+# rust/crates/pqc-promote/src/policy.rs (README §7.7).
+#
+# IMPORTANT convention inherited from the reference implementation: every
+# metric named below is assumed higher-is-better (see pqc-promote's gates.rs
+# docstring). test_mae is lower-is-better, so the training pipeline also logs
+# `neg_test_mae = -test_mae` specifically so it can be gated the same way as
+# everything else — gate on `neg_test_mae`, never on `test_mae` directly.
+
+revision: v1
+environments:
+
+  local:
+    defaults:
+      max_eval_age_days: 30
+      min_promotion_interval_hours: 0
+      on_pass: approve
+    deployments:
+      pqc-quantum-risk:
+        primary_metric: neg_test_mae
+        min_primary_margin: 0.0
+        floors:
+          bucket_macro_f1: 0.55
+        max_regressions:
+          bucket_macro_f1: 0.02
+
+  minikube:
+    defaults:
+      max_eval_age_days: 14
+      min_promotion_interval_hours: 1
+      on_pass: approve
+    deployments:
+      pqc-quantum-risk:
+        primary_metric: neg_test_mae
+        min_primary_margin: 0.005
+        floors:
+          bucket_macro_f1: 0.60
+        max_regressions:
+          bucket_macro_f1: 0.02

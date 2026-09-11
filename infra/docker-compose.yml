@@ -1,0 +1,125 @@
+# Local / minikube-equivalent stack. See README.md §6.
+#
+# Working today:  postgres, neo4j, mlflow
+# Not yet built:  pqc-core-api, pqc-inference, ai-api, dashboard — their
+#   services are stubbed out below (commented) so this file is the checklist
+#   to fill in as each component (README §7) gets built. Uncomment a block
+#   once that component has a Dockerfile.
+#
+# Usage:
+#   cp ../.env.example ../.env          # once, then edit
+#   docker compose --env-file ../.env up -d postgres neo4j mlflow
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: pqc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pqc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pqc_dev_only_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-pqc}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pqc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: pqc-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/pqc_dev_only_change_me}
+      # Community edition — no enterprise features needed at this scale.
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"   # browser UI
+      - "${NEO4J_BOLT_PORT:-7687}:7687"   # bolt protocol (loader + query module use this)
+    volumes:
+      - ./.neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mlflow:
+    build:
+      context: ./mlflow
+    container_name: pqc-mlflow
+    restart: unless-stopped
+    ports:
+      - "${MLFLOW_PORT:-5000}:5000"
+    volumes:
+      - ./.mlflow-data:/mlflow-data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5000')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------
+  # TODO — uncomment as each component is built (README §7). Keep the same
+  # env var names as .env.example so nothing else has to change.
+  # ---------------------------------------------------------------------
+
+  # pqc-core-api:                        # §7.3
+  #   build:
+  #     context: ../rust
+  #     dockerfile: crates/pqc-core-api/Dockerfile
+  #   container_name: pqc-core-api
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-pqc}:${POSTGRES_PASSWORD:-pqc_dev_only_change_me}@postgres:5432/${POSTGRES_DB:-pqc}
+  #     PQC_API_TOKEN: ${PQC_API_TOKEN:-dev_only_shared_token}
+  #   ports:
+  #     - "${PQC_CORE_API_PORT:-8080}:8080"
+
+  # pqc-inference:                       # §7.6
+  #   build:
+  #     context: ../rust
+  #     dockerfile: crates/pqc-inference/Dockerfile
+  #   container_name: pqc-inference
+  #   depends_on:
+  #     - mlflow
+  #   environment:
+  #     MLFLOW_TRACKING_URI: http://mlflow:5000
+  #     PQC_MODEL_NAME: pqc-quantum-risk
+  #     PQC_MODEL_ALIAS: ${PQC_MODEL_ALIAS:-champion}
+  #   ports:
+  #     - "${PQC_INFERENCE_PORT:-8081}:8081"
+
+  # ai-api:                              # §7.10
+  #   build:
+  #     context: ../python
+  #     dockerfile: services/ai_api/Dockerfile
+  #   container_name: pqc-ai-api
+  #   depends_on:
+  #     - postgres
+  #     - neo4j
+  #   environment:
+  #     ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  #     PQC_CORE_API_URL: http://pqc-core-api:8080
+  #     PQC_INFERENCE_URL: http://pqc-inference:8081
+  #     NEO4J_URI: bolt://neo4j:7687
+  #     NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/pqc_dev_only_change_me}
+  #   ports:
+  #     - "${PQC_AI_API_PORT:-8082}:8082"
+
+  # dashboard:                           # §7.12
+  #   build:
+  #     context: ../dashboard
+  #   container_name: pqc-dashboard
+  #   depends_on:
+  #     - pqc-core-api
+  #     - ai-api
+  #   ports:
+  #     - "5173:80"

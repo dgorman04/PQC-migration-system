@@ -1,0 +1,62 @@
+[project]
+name = "pqc-platform"
+version = "0.1.0"
+description = "PQC Migration Platform — Python / AI side (training, agent, RAG, graph, optimiser). Model promotion lives in rust/crates/pqc-promote, not here."
+requires-python = ">=3.11"
+# See ../README.md at the repo root for the actual project documentation —
+# hatchling requires a package readme to live inside this directory, so this
+# project intentionally doesn't declare one.
+
+# Kept intentionally small: only what pqc_common / pqc_riskmodel need today.
+# Add extras below as each README §7 component gets built — don't pre-install
+# dependencies for code that doesn't exist yet. Model promotion (§7.7) is a
+# Rust binary (rust/crates/pqc-promote), not a Python package.
+dependencies = [
+    "pandas==2.2.3",
+    "numpy==1.26.4",
+    "scikit-learn==1.5.2",
+    "xgboost==2.1.1",
+    "mlflow==2.16.2",
+    "pyyaml==6.0.2",
+    "requests==2.32.3",
+]
+
+[project.optional-dependencies]
+# §7.5 — ONNX export + plotting, only needed to run the training pipeline itself
+riskmodel = [
+    "matplotlib==3.9.2",
+    "onnxmltools==1.12.0",
+    "onnxruntime==1.19.2",
+    "skl2onnx==1.17.0",
+    "onnx==1.16.0",
+]
+# §7.5 (pipeline orchestration) — only needed to compile/submit the KFP pipeline
+pipelines = [
+    "kfp==2.9.0",
+]
+# TODO add as built: features (§7.4), graph (§7.8, neo4j driver), rag (§7.9,
+# langchain + sentence-transformers + pgvector), agent (§7.10, langgraph +
+# anthropic + fastapi), optimiser (§7.11, networkx)
+dev = [
+    "pytest==8.3.3",
+    "ruff==0.7.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Extend this list as new packages land under src/ (pqc_features, pqc_graph,
+# pqc_rag, pqc_agent, pqc_optimiser, pqc_eval, …).
+packages = [
+    "src/pqc_common",
+    "src/pqc_riskmodel",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+src = ["src", "pipelines", "jobs", "tests"]

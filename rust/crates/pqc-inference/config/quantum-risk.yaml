@@ -1,0 +1,63 @@
+# The one deployment this service serves. Where the reference
+# poc-model-inference-service splits deployment.yaml / adapter.yaml /
+# serving.yaml across three files per deployment (because it can serve many
+# deployments over multiple transports), this project serves exactly one
+# model over HTTP — so it's one file. See README.md §7.6.
+
+model:
+  # Name of the env var holding a local .onnx file path. If that env var is
+  # unset at boot, falls back to resolving via MLflow using the fields below.
+  path_env: PQC_MODEL_PATH
+  # Must match the ONNX graph's actual tensor names — check
+  # model_manifest.json next to whichever model.onnx you're pointing at
+  # rather than guessing.
+  input_name: input
+  output_name: variable
+  head: regression
+
+mlflow:
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  model_name: pqc-quantum-risk
+  # Name of the env var holding the alias to resolve; defaults to "champion"
+  # if that env var is unset.
+  alias_env: PQC_MODEL_ALIAS
+
+# Ordered feature list — tensor column order. Mirrors
+# python/config/feature_schema.yaml; keep the two in sync by hand (see
+# README.md §12 — no shared-package machinery for this yet).
+features:
+  - name: algorithm_RSA
+    kind: numeric
+  - name: algorithm_ECC
+    kind: numeric
+  - name: key_size
+    kind: numeric
+  - name: quantum_vulnerable
+    kind: numeric
+  - name: internet_accessible
+    kind: numeric
+  - name: has_public_cert
+    kind: numeric
+  - name: network_zone
+    kind: categorical
+    categories: { public: 0.0, dmz: 1.0, internal: 2.0, isolated: 3.0 }
+  - name: financial_data
+    kind: numeric
+  - name: customer_data
+    kind: numeric
+  - name: regulated_system
+    kind: numeric
+  - name: criticality
+    kind: categorical
+    categories: { LOW: 0.0, MEDIUM: 1.0, HIGH: 2.0, CRITICAL: 3.0 }
+  - name: dependency_count
+    kind: numeric
+  - name: loc_estimate
+    kind: numeric
+  - name: migration_complexity
+    kind: categorical
+    categories: { LOW: 0.0, MEDIUM: 1.0, HIGH: 2.0 }
+  - name: asset_age_days
+    kind: numeric
+  - name: previous_incident_flag
+    kind: numeric

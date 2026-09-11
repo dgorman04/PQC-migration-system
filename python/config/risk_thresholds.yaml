@@ -1,0 +1,15 @@
+# Maps the model's continuous 0-1 risk score to a migration priority bucket.
+# This is a business decision, not something the model learns — it is static
+# config read by pqc_riskmodel.thresholds, the evaluation harness, and
+# (eventually) the migration optimiser and the inference service's response.
+#
+# Evaluated top-to-bottom, first match wins — list highest min_score first.
+buckets:
+  - priority: CRITICAL
+    min_score: 0.75
+  - priority: HIGH
+    min_score: 0.50
+  - priority: MEDIUM
+    min_score: 0.25
+  - priority: LOW
+    min_score: 0.0

@@ -1,0 +1,13 @@
+# One hostname[:port] per line. Read by the TLS scanner (§7.1) via
+# `GET /scan-targets` once the Core API exists, or directly with
+# `--targets infra/seed/scan_targets.txt` before that endpoint is built.
+#
+# These are public, well-known HTTPS endpoints — safe to scan without
+# authorisation concerns, and useful because their certificate algorithms are
+# well documented, so you can sanity-check scanner output against ground
+# truth. Do NOT add internal/customer hosts to this file — that belongs in a
+# gitignored local file (see .gitignore: infra/seed/scan_targets.txt.local).
+
+example.com:443
+www.google.com:443
+www.cloudflare.com:443
